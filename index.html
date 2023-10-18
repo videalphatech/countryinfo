@@ -1,11 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Query Parameter Reader</title>
 </head>
+
 <body>
-    {"key":"value"}
+
+    <p id="dataRow"></p>
+
+    <script>
+        // Function to get query parameters from the URL
+        function getQueryVariable(variable) {
+            const query = window.location.search.substring(1);
+            const vars = query.split("&");
+            for (let i = 0; i < vars.length; i++) {
+                const pair = vars[i].split("=");
+                if (pair[0] === variable) {
+                    return decodeURIComponent(pair[1]);
+                }
+            }
+            return null;
+        }
+
+        // Function to search for a country in the CSV file
+        async function searchCountryInCSV(country) {
+            const response = await fetch('countrycode.csv');
+            const csvData = await response.text();
+
+            const rows = csvData.split('\n').map(row => row.split(','));
+
+            for (let i = 1; i < rows.length; i++) {
+
+                const columns = rows[i];
+                const countryName = columns[0].replace(/"/g, '');
+                const countryIsoCode = columns[1].replace(/"/g, '');
+                const countryDialCode = columns[7].replace(/"/g, '');
+
+                if (countryName === country) {
+                    return { "countryName": countryName, "countryIsoCode": countryIsoCode, "countryDialCode": '+' + countryDialCode, };
+                }
+            }
+
+            return null;
+        }
+
+
+        // Extract country from query parameters
+        const countryParam = getQueryVariable('country');
+
+        if (countryParam) {
+            // Search for the country in the CSV file
+            searchCountryInCSV(countryParam)
+                .then(rowData => {
+                    if (rowData) {
+                        console.log(rowData);
+                        // Append the row to the table body
+                        document.getElementById('dataRow').innerText = JSON.stringify(rowData);
+                    } else {
+                        console.error('Country not found in CSV data.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching or parsing CSV file:', error);
+                });
+        } else {
+            console.error('Country parameter not found in the URL.');
+        }
+    </script>
+
 </body>
+
 </html>
